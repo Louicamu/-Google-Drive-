@@ -18,8 +18,32 @@ interface FileWithProgress {
   status: 'pending' | 'uploading' | 'completed' | 'error';
 }
 
+// 检测可用的上传 API
+let cachedEndpoint: string | null = null;
+
+async function detectUploadEndpoint(): Promise<string> {
+  if (cachedEndpoint) return cachedEndpoint;
+
+  // 检查是否有 BLOB_READ_WRITE_TOKEN (Vercel 环境)
+  try {
+    const testRes = await fetch('/api/upload-blob', {
+      method: 'HEAD',
+    });
+    if (testRes.ok || testRes.status === 405) {
+      cachedEndpoint = '/api/upload-blob';
+      return cachedEndpoint;
+    }
+  } catch {
+    // Blob API 不可用，使用本地上传
+  }
+
+  cachedEndpoint = '/api/upload';
+  return cachedEndpoint;
+}
+
 export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalProps) {
   const [files, setFiles] = useState<FileWithProgress[]>([]);
+  const [uploadError, setUploadError] = useState<string>('');
   const { currentParentId, currentPath } = useStore();
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -49,6 +73,11 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
     formData.append('path', '/');
 
     try {
+      setUploadError('');
+      
+      // 检测上传 API（先尝试 Blob，失败则使用本地）
+      const uploadEndpoint = await detectUploadEndpoint();
+
       // 逐个上传文件并显示进度
       for (let i = 0; i < files.length; i++) {
         setFiles((prev) =>
@@ -74,7 +103,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
           );
         }, 100);
 
-        const res = await fetch('/api/upload', {
+        const res = await fetch(uploadEndpoint, {
           method: 'POST',
           body: singleFormData,
         });
@@ -83,7 +112,7 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
 
         if (!res.ok) {
           const data = await res.json();
-          throw new Error(data.error || '上传失败');
+          throw new Error(data.error || data.message || '上传失败');
         }
 
         setFiles((prev) =>
@@ -101,13 +130,15 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
       }, 500);
     } catch (error) {
       console.error('上传错误:', error);
+      const errorMessage = error instanceof Error ? error.message : '上传失败，请重试';
+      setUploadError(errorMessage);
+      
       // 标记失败的文件
       setFiles((prev) =>
         prev.map((f) =>
           f.status === 'uploading' ? { ...f, status: 'error' as const } : f
         )
       );
-      alert('上传失败，请重试');
     }
   };
 
@@ -129,6 +160,13 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
             <X className="w-5 h-5" />
           </button>
         </div>
+
+        {/* 错误提示 */}
+        {uploadError && (
+          <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-600 rounded-lg text-sm">
+            {uploadError}
+          </div>
+        )}
 
         {/* 拖拽区域 */}
         <div
@@ -179,13 +217,17 @@ export default function UploadModal({ isOpen, onClose, onSuccess }: UploadModalP
                       </div>
                     )}
                     {item.status === 'completed' && (
-                      <span className="text-xs text-green-600">上传完成</span>
+                      <span className="text-xs text-green-600">✓ 上传完成</span>
+                    )}
+                    {item.status === 'error' && (
+                      <span className="text-xs text-red-600">✗ 上传失败</span>
                     )}
                   </div>
-                  {item.status === 'pending' && (
+                  {(item.status === 'pending' || item.status === 'error') && (
                     <button
                       onClick={() => removeFile(index)}
                       className="p-1 hover:bg-gray-200 rounded transition"
+                      title="移除"
                     >
                       <X className="w-4 h-4" />
                     </button>
