@@ -54,8 +54,10 @@ export async function POST(req: NextRequest, { params }: RouteParams) {
 
     await file.save();
 
-    // 生成分享链接
-    const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    // 生成分享链接 - 使用实际的请求域名
+    const protocol = req.headers.get('x-forwarded-proto') || 'http';
+    const host = req.headers.get('x-forwarded-host') || req.headers.get('host') || 'localhost:3000';
+    const baseUrl = `${protocol}://${host}`;
     const shareUrl = `${baseUrl}/share/${token}`;
 
     return NextResponse.json({
