@@ -53,6 +53,16 @@ export async function GET(req: NextRequest) {
         };
         break;
 
+      case 'trash':
+        // 获取回收站中的文件
+        query = {
+          ownerId: session.user.id,
+          isDeleted: true,
+        };
+        const trashedFiles = await FileItem.find(query)
+          .sort({ deletedAt: -1 });
+        return NextResponse.json(trashedFiles);
+
       default:
         // 获取指定文件夹下的文件
         if (parentId && parentId !== 'null') {
