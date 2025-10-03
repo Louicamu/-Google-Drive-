@@ -19,7 +19,15 @@ export async function GET(req: NextRequest) {
 
     await connectDB();
 
-    let query: any = {
+    interface QueryType {
+      ownerId?: string;
+      isDeleted?: boolean;
+      starred?: boolean;
+      parentId?: string | null;
+      'sharedWith.userId'?: string;
+    }
+
+    let query: QueryType = {
       ownerId: session.user.id,
       isDeleted: false,
     };

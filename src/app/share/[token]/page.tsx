@@ -6,6 +6,7 @@ import { formatFileSize } from '@/lib/utils';
 import { format } from 'date-fns';
 import { zhCN } from 'date-fns/locale';
 import Link from 'next/link';
+import Image from 'next/image';
 
 interface PageProps {
   params: Promise<{
@@ -34,10 +35,6 @@ export default function SharePage({ params }: PageProps) {
   const [password, setPassword] = useState('');
   const [passwordError, setPasswordError] = useState('');
 
-  useEffect(() => {
-    fetchFileInfo();
-  }, [token]);
-
   const fetchFileInfo = async (pwd?: string) => {
     setLoading(true);
     setPasswordError('');
@@ -62,12 +59,18 @@ export default function SharePage({ params }: PageProps) {
 
       setFile(data);
       setRequiresPassword(false);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      const error = err as Error;
+      setError(error.message);
     } finally {
       setLoading(false);
     }
   };
+
+  useEffect(() => {
+    fetchFileInfo();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token]);
 
   const handlePasswordSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -101,8 +104,9 @@ export default function SharePage({ params }: PageProps) {
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-    } catch (error: any) {
-      alert(error.message);
+    } catch (error: unknown) {
+      const err = error as Error;
+      alert(err.message);
     }
   };
 
@@ -244,10 +248,12 @@ export default function SharePage({ params }: PageProps) {
           {/* 预览区域（如果是图片） */}
           {file.type.startsWith('image/') && file.url && (
             <div className="mb-8">
-              <div className="border border-gray-200 rounded-lg overflow-hidden">
-                <img
+              <div className="border border-gray-200 rounded-lg overflow-hidden relative" style={{ minHeight: '200px' }}>
+                <Image
                   src={file.url}
                   alt={file.name}
+                  width={800}
+                  height={600}
                   className="w-full h-auto max-h-96 object-contain bg-gray-50"
                 />
               </div>

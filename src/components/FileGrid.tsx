@@ -11,6 +11,7 @@ interface FileItem {
   _id: string;
   name: string;
   type: string;
+  path: string;
   isFolder: boolean;
   size: number;
   starred: boolean;

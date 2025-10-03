@@ -4,6 +4,7 @@ import { signOut, useSession } from 'next-auth/react';
 import { Search, Upload, User, LogOut, Grid, List } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 import { useState } from 'react';
+import Image from 'next/image';
 import UploadModal from './UploadModal';
 
 interface NavbarProps {
@@ -73,9 +74,11 @@ export default function Navbar({ onFileUploaded }: NavbarProps) {
             <div className="flex items-center gap-2 pl-3 border-l border-gray-200">
               <div className="flex items-center gap-2">
                 {session.user.image ? (
-                  <img
+                  <Image
                     src={session.user.image}
-                    alt={session.user.name}
+                    alt={session.user.name || 'User'}
+                    width={32}
+                    height={32}
                     className="w-8 h-8 rounded-full"
                   />
                 ) : (

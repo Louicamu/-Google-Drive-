@@ -38,6 +38,7 @@ export default function DrivePage() {
     if (session) {
       fetchFiles();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session, currentParentId]);
 
   const fetchFiles = async () => {
@@ -106,7 +107,7 @@ export default function DrivePage() {
                 这里还没有文件
               </h3>
               <p className="text-gray-500">
-                点击"新建文件夹"或"上传"按钮开始使用
+                点击&quot;新建文件夹&quot;或&quot;上传&quot;按钮开始使用
               </p>
             </div>
           ) : viewMode === 'grid' ? (

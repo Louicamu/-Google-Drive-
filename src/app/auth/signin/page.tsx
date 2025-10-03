@@ -31,7 +31,7 @@ export default function SignIn() {
       } else {
         router.push('/drive');
       }
-    } catch (err) {
+    } catch {
       setError('登录失败，请稍后重试');
     } finally {
       setLoading(false);

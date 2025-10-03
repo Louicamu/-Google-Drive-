@@ -45,7 +45,7 @@ export default function CreateFolderModal({ isOpen, onClose, onSuccess }: Create
       setName('');
       onSuccess();
       onClose();
-    } catch (err) {
+    } catch {
       setError('创建失败，请稍后重试');
     } finally {
       setLoading(false);

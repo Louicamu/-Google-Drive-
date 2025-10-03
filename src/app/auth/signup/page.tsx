@@ -51,7 +51,7 @@ export default function SignUp() {
 
       // 注册成功，跳转到登录页
       router.push('/auth/signin?registered=true');
-    } catch (err) {
+    } catch {
       setError('注册失败，请稍后重试');
     } finally {
       setLoading(false);

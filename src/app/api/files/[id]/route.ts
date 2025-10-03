@@ -34,8 +34,8 @@ export async function PUT(req: NextRequest, { params }: RouteParams) {
     }
 
     // 允许的更新字段
-    const allowedFields = ['name', 'starred', 'parentId'];
-    const updateData: any = {};
+    const allowedFields = ['name', 'starred', 'parentId'] as const;
+    const updateData: Record<string, unknown> = {};
 
     for (const field of allowedFields) {
       if (updates[field] !== undefined) {

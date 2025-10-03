@@ -34,12 +34,16 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: '文件不存在' }, { status: 404 });
     }
 
+    if (!file.url) {
+      return NextResponse.json({ error: '文件URL不存在' }, { status: 404 });
+    }
+
     // 读取文件
     const filePath = join(process.cwd(), 'public', file.url);
     const fileBuffer = await readFile(filePath);
 
     // 返回文件
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(fileBuffer as unknown as BodyInit, {
       headers: {
         'Content-Type': file.type,
         'Content-Disposition': `attachment; filename="${encodeURIComponent(file.name)}"`,
