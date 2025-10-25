@@ -3,7 +3,8 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import FileItem from '@/models/FileItem';
-import { existsSync, readdir } from 'fs/promises';
+import { readdir } from 'fs/promises';
+import { existsSync } from 'fs';
 import { join } from 'path';
 
 // 文件修复API
