@@ -91,7 +91,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     }
 
     // 返回文件
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(fileBuffer as BodyInit, {
       headers: {
         'Content-Type': contentType,
         'Content-Disposition': `attachment; filename="${encodeURIComponent(file.name)}"`,
