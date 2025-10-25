@@ -49,10 +49,37 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     // 构建文件路径
     const filePath = join(process.cwd(), 'public', file.url);
     
+    // 调试信息
+    console.log('下载调试信息:');
+    console.log('- 文件ID:', id);
+    console.log('- 文件名:', file.name);
+    console.log('- 文件URL:', file.url);
+    console.log('- 构建路径:', filePath);
+    console.log('- 当前工作目录:', process.cwd());
+    
     // 检查文件是否存在
     if (!existsSync(filePath)) {
       console.error(`文件不存在: ${filePath}`);
-      return NextResponse.json({ error: '文件在服务器上不存在' }, { status: 404 });
+      
+      // 尝试其他可能的路径
+      const alternativePaths = [
+        join(process.cwd(), file.url),
+        join(process.cwd(), 'public', 'uploads', file.url.split('/').pop() || ''),
+        file.url
+      ];
+      
+      console.log('尝试的替代路径:');
+      alternativePaths.forEach((altPath, index) => {
+        console.log(`- 路径${index + 1}: ${altPath} (存在: ${existsSync(altPath)})`);
+      });
+      
+      return NextResponse.json({ 
+        error: '文件在服务器上不存在',
+        debug: {
+          filePath,
+          alternativePaths: alternativePaths.map(p => ({ path: p, exists: existsSync(p) }))
+        }
+      }, { status: 404 });
     }
 
     // 检查文件大小
