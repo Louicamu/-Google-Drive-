@@ -34,6 +34,15 @@ export async function GET(req: NextRequest) {
 
     // 根据不同类型构建查询
     switch (type) {
+      case 'all':
+        // 获取所有文件夹（用于构建路径映射）
+        const allFolders = await FileItem.find({
+          ownerId: session.user.id,
+          isDeleted: false,
+          isFolder: true,
+        }).select('_id name path');
+        return NextResponse.json(allFolders);
+
       case 'recent':
         // 获取最近修改的文件
         const files = await FileItem.find(query)
