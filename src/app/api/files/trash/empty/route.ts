@@ -7,7 +7,7 @@ import { unlink } from 'fs/promises';
 import { join } from 'path';
 
 // 清空回收站
-export async function DELETE(req: NextRequest) {
+export async function DELETE() {
   try {
     const session = await getServerSession(authOptions);
     
@@ -39,7 +39,7 @@ export async function DELETE(req: NextRequest) {
           await unlink(filePath);
           physicalFilesDeleted++;
           console.log('🗑️ 已删除物理文件:', file.url);
-        } catch (error) {
+        } catch {
           console.log('⚠️ 删除物理文件失败:', file.url);
           // 继续删除数据库记录
         }

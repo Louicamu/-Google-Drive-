@@ -20,7 +20,7 @@ export default function Breadcrumb() {
           const map: Record<string, string> = {};
           
           // 构建路径到ID的映射
-          files.forEach((file: any) => {
+          files.forEach((file: { _id: string; path: string; isFolder: boolean }) => {
             if (file.isFolder) {
               map[file.path] = file._id;
             }
