@@ -39,12 +39,12 @@ export async function POST(req: NextRequest) {
     const files = await readdir(uploadsDir);
     
     // 查找可能的匹配文件
-    const possibleFiles = files.filter(filename => {
+    const possibleFiles = files.filter(fileName => {
       // 检查文件名是否包含原始文件名的部分
       const originalName = file.name.toLowerCase();
-      const filename = filename.toLowerCase();
-      return filename.includes(originalName.split('.')[0]) || 
-             originalName.includes(filename.split('.')[0]);
+      const currentFileName = fileName.toLowerCase();
+      return currentFileName.includes(originalName.split('.')[0]) || 
+             originalName.includes(currentFileName.split('.')[0]);
     });
 
     if (possibleFiles.length > 0) {
