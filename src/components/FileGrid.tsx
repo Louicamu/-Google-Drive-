@@ -44,7 +44,10 @@ export default function FileGrid({ files, onFileClick }: FileGridProps) {
     
     try {
       const res = await fetch(`/api/download/${file._id}`);
-      if (!res.ok) throw new Error('下载失败');
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.error || '下载失败');
+      }
       
       const blob = await res.blob();
       const url = window.URL.createObjectURL(blob);
@@ -57,7 +60,7 @@ export default function FileGrid({ files, onFileClick }: FileGridProps) {
       document.body.removeChild(a);
     } catch (error) {
       console.error('下载错误:', error);
-      alert('下载失败');
+      alert(`下载失败: ${error instanceof Error ? error.message : '未知错误'}`);
     }
     
     closeContextMenu();

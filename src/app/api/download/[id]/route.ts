@@ -18,13 +18,19 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     const session = await getServerSession(authOptions);
     
     if (!session?.user) {
-      return NextResponse.json({ error: '未授权' }, { status: 401 });
+      return NextResponse.json({ error: '未授权访问' }, { status: 401 });
     }
 
     const { id } = await params;
 
+    // 验证文件ID格式
+    if (!id || typeof id !== 'string') {
+      return NextResponse.json({ error: '无效的文件ID' }, { status: 400 });
+    }
+
     await connectDB();
 
+    // 查找文件
     const file = await FileItem.findOne({
       _id: id,
       ownerId: session.user.id,
@@ -45,13 +51,16 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     
     // 检查文件是否存在
     if (!existsSync(filePath)) {
-      console.error('物理文件不存在:', filePath);
-      return NextResponse.json({ error: '文件不存在于服务器' }, { status: 404 });
+      console.error(`文件不存在: ${filePath}`);
+      return NextResponse.json({ error: '文件在服务器上不存在' }, { status: 404 });
     }
 
-    // 获取文件信息
+    // 检查文件大小
     const fileStats = await stat(filePath);
-    
+    if (fileStats.size === 0) {
+      return NextResponse.json({ error: '文件为空' }, { status: 400 });
+    }
+
     // 读取文件
     const fileBuffer = await readFile(filePath);
 
@@ -85,16 +94,25 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
     return new NextResponse(fileBuffer, {
       headers: {
         'Content-Type': contentType,
-        'Content-Length': fileStats.size.toString(),
         'Content-Disposition': `attachment; filename="${encodeURIComponent(file.name)}"`,
+        'Content-Length': fileBuffer.length.toString(),
         'Cache-Control': 'no-cache',
       },
     });
   } catch (error) {
     console.error('下载错误:', error);
-    return NextResponse.json({ 
-      error: error instanceof Error ? error.message : '下载失败' 
-    }, { status: 500 });
+    
+    // 根据错误类型返回不同的错误信息
+    if (error instanceof Error) {
+      if (error.message.includes('ENOENT')) {
+        return NextResponse.json({ error: '文件不存在' }, { status: 404 });
+      }
+      if (error.message.includes('EACCES')) {
+        return NextResponse.json({ error: '文件访问权限不足' }, { status: 403 });
+      }
+    }
+    
+    return NextResponse.json({ error: '下载失败，请稍后重试' }, { status: 500 });
   }
 }
 
