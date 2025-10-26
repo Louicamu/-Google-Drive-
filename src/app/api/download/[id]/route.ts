@@ -30,12 +30,15 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
     await connectDB();
 
-    // 查找文件
+    // 查找文件：允许本人或被共享给我的文件
     const file = await FileItem.findOne({
       _id: id,
-      ownerId: session.user.id,
       isFolder: false,
       isDeleted: false,
+      $or: [
+        { ownerId: session.user.id },
+        { 'sharedWith.userId': session.user.id },
+      ],
     });
 
     if (!file) {
@@ -46,40 +49,42 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: '文件URL不存在' }, { status: 404 });
     }
 
-    // 构建文件路径
-    const filePath = join(process.cwd(), 'public', file.url);
-    
-    // 调试信息
-    console.log('下载调试信息:');
-    console.log('- 文件ID:', id);
-    console.log('- 文件名:', file.name);
-    console.log('- 文件URL:', file.url);
-    console.log('- 构建路径:', filePath);
-    console.log('- 当前工作目录:', process.cwd());
-    
+    // 远程URL（如 Vercel Blob）走代理下载
+    const isRemote = /^https?:\/\//i.test(file.url);
+    if (isRemote) {
+      const remoteRes = await fetch(file.url, { cache: 'no-store' });
+      if (!remoteRes.ok) {
+        return NextResponse.json({ error: '远程文件获取失败' }, { status: 502 });
+      }
+
+      const arrayBuffer = await remoteRes.arrayBuffer();
+
+      let contentType = file.type || remoteRes.headers.get('content-type') || 'application/octet-stream';
+      const contentLength = remoteRes.headers.get('content-length');
+
+      return new NextResponse(Buffer.from(arrayBuffer) as BodyInit, {
+        headers: {
+          'Content-Type': contentType,
+          'Content-Disposition': `attachment; filename="${encodeURIComponent(file.name)}"`,
+          ...(contentLength ? { 'Content-Length': contentLength } : {}),
+          'Cache-Control': 'no-cache',
+        },
+      });
+    }
+
+    // 本地文件路径：修正以 / 开头被 path.join 吞掉的问题
+    const publicRoot = join(process.cwd(), 'public');
+    const relativeUrl = file.url.replace(/^\/+/, '');
+    const filePath = join(publicRoot, relativeUrl);
+
+    // 简单防穿越：要求路径仍位于 public 目录
+    if (!filePath.startsWith(publicRoot)) {
+      return NextResponse.json({ error: '非法文件路径' }, { status: 400 });
+    }
+
     // 检查文件是否存在
     if (!existsSync(filePath)) {
-      console.error(`文件不存在: ${filePath}`);
-      
-      // 尝试其他可能的路径
-      const alternativePaths = [
-        join(process.cwd(), file.url),
-        join(process.cwd(), 'public', 'uploads', file.url.split('/').pop() || ''),
-        file.url
-      ];
-      
-      console.log('尝试的替代路径:');
-      alternativePaths.forEach((altPath, index) => {
-        console.log(`- 路径${index + 1}: ${altPath} (存在: ${existsSync(altPath)})`);
-      });
-      
-      return NextResponse.json({ 
-        error: '文件在服务器上不存在',
-        debug: {
-          filePath,
-          alternativePaths: alternativePaths.map(p => ({ path: p, exists: existsSync(p) }))
-        }
-      }, { status: 404 });
+      return NextResponse.json({ error: '文件在服务器上不存在' }, { status: 404 });
     }
 
     // 检查文件大小
