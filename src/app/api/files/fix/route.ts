@@ -4,7 +4,6 @@ import { authOptions } from '@/lib/auth';
 import connectDB from '@/lib/mongodb';
 import FileItem from '@/models/FileItem';
 import { readdir } from 'fs/promises';
-import { existsSync } from 'fs';
 import { join } from 'path';
 
 // 文件修复API

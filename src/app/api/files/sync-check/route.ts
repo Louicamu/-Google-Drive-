@@ -7,7 +7,7 @@ import { existsSync } from 'fs';
 import { join } from 'path';
 
 // 文件同步检查API
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     
@@ -56,3 +56,5 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: '检查失败' }, { status: 500 });
   }
 }
+
+

@@ -59,7 +59,7 @@ export async function GET(req: NextRequest, { params }: RouteParams) {
 
       const arrayBuffer = await remoteRes.arrayBuffer();
 
-      let contentType = file.type || remoteRes.headers.get('content-type') || 'application/octet-stream';
+      const contentType = file.type || remoteRes.headers.get('content-type') || 'application/octet-stream';
       const contentLength = remoteRes.headers.get('content-length');
 
       return new NextResponse(Buffer.from(arrayBuffer) as BodyInit, {
